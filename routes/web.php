@@ -2,6 +2,7 @@
 
 use App\Models\Product;
 use App\Models\Transaction;
+use App\Models\Category;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AdminController;
@@ -19,8 +20,13 @@ use App\Http\Controllers\SuratJalanDashboardController; // Ensure this is correc
 
 // Halaman utama
 Route::get('/', function () {
-    $products = Product::all();
-    return view('welcome', compact('products'));
+    $products = Product::with('category')->orderBy('name')->get();
+    $categories = Category::orderBy('name')->get();
+
+    return view('welcome', [
+        'products' => $products,
+        'categories' => $categories,
+    ]);
 });
 
 // Rute untuk update stok produk
