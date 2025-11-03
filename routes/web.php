@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Product;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
@@ -18,10 +17,11 @@ use App\Http\Controllers\GudangMuatDashboardController; // Ensure this is correc
 use App\Http\Controllers\SuratJalanDashboardController; // Ensure this is correct
 
 // Halaman utama
-Route::get('/', function () {
-    $products = Product::all();
-    return view('welcome', compact('products'));
-});
+Route::view('/', 'welcome')->name('landing');
+
+// Halaman promo MDT Medical Token
+Route::view('/mdt/hospital-dashboard', 'mdt.hospital-dashboard')->name('mdt.hospital');
+Route::view('/mdt/patient-dashboard', 'mdt.patient-dashboard')->name('mdt.patient');
 
 // Rute untuk update stok produk
 Route::get('/products/updatestock', [ProductController::class, 'showUpdateStockForm'])->name('products.updatestock');
