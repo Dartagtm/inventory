@@ -16,12 +16,17 @@ use App\Http\Controllers\SuratJalanController;
 use App\Http\Controllers\DeliveryOrderController;
 use App\Http\Controllers\GudangMuatDashboardController; // Ensure this is correct
 use App\Http\Controllers\SuratJalanDashboardController; // Ensure this is correct
+use App\Http\Controllers\MDTController;
 
 // Halaman utama
 Route::get('/', function () {
     $products = Product::all();
     return view('welcome', compact('products'));
 });
+
+Route::get('/mdt', [MDTController::class, 'landing'])->name('mdt.landing');
+Route::get('/mdt/hospital-dashboard', [MDTController::class, 'hospitalDashboard'])->name('mdt.hospital');
+Route::get('/mdt/patient-dashboard', [MDTController::class, 'patientDashboard'])->name('mdt.patient');
 
 // Rute untuk update stok produk
 Route::get('/products/updatestock', [ProductController::class, 'showUpdateStockForm'])->name('products.updatestock');
