@@ -1,808 +1,421 @@
+@php
+    use Illuminate\Support\Str;
+
+    $productsData = $products->map(function ($product) {
+        $categoryName = optional($product->category)->name;
+
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'category' => Str::slug($categoryName ?? 'lainnya'),
+            'categoryName' => $categoryName ?? 'Lainnya',
+            'stock' => max(0, (int) ($product->quantity ?? 0)),
+            'minOrder' => max(1, (int) data_get($product, 'minimum_order', 1)),
+            'status' => data_get($product, 'status'),
+            'description' => data_get($product, 'description') ?: 'Belum ada deskripsi produk dari database.',
+            'image' => data_get($product, 'image_url'),
+        ];
+    });
+
+    $categoryOptions = $categories->map(function ($category) {
+        $categoryName = $category->name ?: 'Kategori ' . $category->id;
+
+        return [
+            'slug' => Str::slug($categoryName) ?: 'kategori-' . $category->id,
+            'name' => $categoryName,
+        ];
+    });
+@endphp
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>PT Big - Spesialis Lemari Plastik Berkualitas</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #2c3e50;
-            --secondary: #3498db;
-            --accent: #e74c3c;
-            --light: #ecf0f1;
-            --dark: #2c3e50;
-            --success: #2ecc71;
-            --warning: #f39c12;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="csrf-token" content="{{ csrf_token() }}" />
+  <title>PT BIG - Profil Perusahaan & Katalog Produk</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#1e3a8a',
+            accent: '#f97316',
+            success: '#10b981',
+            warning: '#f97316'
+          }
         }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background-color: #f5f5f5;
-            color: var(--dark);
-            line-height: 1.6;
-        }
-        
-        header {
-            background-color: var(--primary);
-            color: white;
-            padding: 1rem 0;
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-        
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .logo {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: white;
-            text-decoration: none;
-        }
-        
-        .logo span {
-            color: var(--secondary);
-        }
-        
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-        }
-        
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        
-        .nav-links a:hover {
-            color: var(--secondary);
-        }
-        
-        .hero {
-            height: 80vh;
-            background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/71c8eeba-207a-4e6a-9f46-831ce4e53bf0.png');
-            background-size: cover;
-            background-position: center;
-            display: flex;
-            align-items: center;
-            text-align: center;
-            color: white;
-            margin-top: 60px;
-        }
-        
-        .hero-content h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-        
-        .hero-content p {
-            font-size: 1.2rem;
-            max-width: 800px;
-            margin: 0 auto 2rem;
-        }
-        
-        .btn {
-            display: inline-block;
-            padding: 0.8rem 1.8rem;
-            background-color: var(--secondary);
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-        }
-        
-        .btn:hover {
-            background-color: #2980b9;
-            transform: translateY(-3px);
-        }
-        
-        section {
-            padding: 5rem 0;
-        }
-        
-        .section-title {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 3rem;
-            color: var(--primary);
-        }
-        
-        .about {
-            background-color: white;
-        }
-        
-        .about-content {
-            display: flex;
-            gap: 3rem;
-            align-items: center;
-        }
-        
-        .about-text {
-            flex: 1;
-        }
-        
-        .about-image {
-            flex: 1;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .about-image img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-        
-        .products {
-            background-color: #f9f9f9;
-        }
-        
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-        
-        .product-card {
-            background-color: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        /* Modal styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            max-width: 800px;
-            width: 90%;
-            position: relative;
-        }
-
-        .close-modal {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .product-filter {
-            margin-bottom: 2rem;
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-        }
-
-        .search-input {
-            padding: 0.8rem;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            width: 300px;
-        }
-
-        .filter-select {
-            padding: 0.8rem;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-        }
-
-        /* Login Form Styles */
-        .btn-sm {
-            padding: 0.5rem 1rem;
-            font-size: 0.9rem;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 0.8rem;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        
-        .product-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
-        }
-        
-        .product-image {
-            height: 200px;
-            width: 100%;
-            object-fit: cover;
-        }
-        
-        .product-info {
-            padding: 1.5rem;
-        }
-        
-        .product-name {
-            font-size: 1.3rem;
-            margin-bottom: 0.5rem;
-            color: var(--primary);
-        }
-        
-        .product-price {
-            font-size: 1.1rem;
-            color: var(--secondary);
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        
-        .stock-status {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        
-        .in-stock {
-            background-color: rgba(46, 204, 113, 0.2);
-            color: var(--success);
-        }
-        
-        .out-stock {
-            background-color: rgba(231, 76, 60, 0.2);
-            color: var(--accent);
-        }
-        
-        .pre-order {
-            background-color: rgba(243, 156, 18, 0.2);
-            color: var(--warning);
-        }
-        
-        footer {
-            background-color: var(--dark);
-            color: white;
-            padding: 3rem 0 1rem;
-        }
-        
-        .footer-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-        
-        .footer-column h3 {
-            font-size: 1.3rem;
-            margin-bottom: 1.5rem;
-            position: relative;
-            padding-bottom: 0.5rem;
-        }
-        
-        .footer-column h3::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            bottom: 0;
-            width: 50px;
-            height: 2px;
-            background-color: var(--secondary);
-        }
-        
-        .footer-column p {
-            margin-bottom: 1rem;
-        }
-        
-        .social-links {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-        
-        .social-links a {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            background-color: rgba(255,255,255,0.1);
-            border-radius: 50%;
-            color: white;
-            transition: all 0.3s ease;
-        }
-        
-        .social-links a:hover {
-            background-color: var(--secondary);
-            transform: translateY(-3px);
-        }
-        
-        .copyright {
-            text-align: center;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        @media (max-width: 768px) {
-            .nav-links {
-                display: none;
-            }
-            
-            .hero-content h1 {
-                font-size: 2.2rem;
-            }
-            
-            .about-content {
-                flex-direction: column;
-            }
-            
-            .section-title {
-                font-size: 2rem;
-            }
-        }
-        
-        /* Loading spinner for product status */
-        .loader {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-radius: 50%;
-            border-top: 4px solid var(--secondary);
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            vertical-align: middle;
-            margin-left: 10px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #f9fafb; font-family: 'Segoe UI', system-ui, sans-serif; scroll-behavior: smooth; }
+    .product-card { transition: transform 0.2s, box-shadow 0.2s; }
+    .product-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+  </style>
 </head>
-<body>
-    <header>
-        <div class="container">
-            <nav>
-                <a href="#" class="logo">PT <span>Big</span></a>
-                <div class="nav-links">
-                    <a href="#home">Beranda</a>
-                    <a href="#about">Tentang Kami</a>
-                    <a href="#products">Produk</a>
-                    <a href="#contact">Kontak</a>
-                    @auth
-                        <a href="{{ route('dashboard') }}" class="btn btn-sm">Dashboard</a>
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit" class="btn btn-sm">Logout</button>
-                        </form>
-                    @else
-                        <a href="{{ route('login') }}" class="btn btn-sm">Login</a>
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="btn btn-sm">Register</a>
-                        @endif
-                    @endauth
-                </div>
-            </nav>
+<body class="text-gray-800">
+
+  <!-- Header -->
+  <header class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+          <i class="fas fa-couch text-white text-xl"></i>
         </div>
-    </header>
-    
-    <section class="hero" id="home">
-        <div class="container">
-            <div class="hero-content">
-                <h1>Spesialis Lemari Plastik Berkualitas</h1>
-                <p>PT Big menyediakan berbagai macam lemari plastik dengan kualitas terbaik dan harga kompetitif untuk kebutuhan rumah dan bisnis Anda.</p>
-                <a href="#products" class="btn">Lihat Produk Kami</a>
-            </div>
+        <div>
+          <h1 class="text-2xl font-bold text-primary">PT BIG</h1>
+          <p class="text-xs text-gray-500">Produsen & distributor furniture plastik sejak 2005</p>
         </div>
-    </section>
-    
-    <section class="about" id="about">
-        <div class="container">
-            <h2 class="section-title">Tentang Kami</h2>
-            <div class="about-content">
-                <div class="about-text">
-                    <p>PT Big adalah perusahaan yang bergerak dalam bidang produksi dan distribusi lemari plastik berkualitas tinggi. Didirikan pada tahun 2010, kami telah menjadi pilihan utama bagi ribuan pelanggan di seluruh Indonesia.</p>
-                    <p>Dengan komitmen untuk menyediakan produk yang tahan lama, fungsional, dan ramah lingkungan, kami terus berinovasi dalam desain dan material untuk memenuhi kebutuhan pelanggan kami.</p>
-                    <p>Produk kami telah mendapatkan sertifikasi kualitas dari lembaga terpercaya dan telah digunakan di berbagai sektor mulai dari rumah tangga, perkantoran, hingga industri.</p>
-                </div>
-                <div class="about-image">
-                    <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/0b69814b-6b7c-4bf9-bd09-5ab1d8713dff.png" alt="Gedung pabrik PT Big dengan logo perusahaan di depan pintu masuk utama" />
-                </div>
-            </div>
-        </div>
-    </section>
-    
-    <section class="products" id="products">
-        <div class="container">
-            <h2 class="section-title">Produk Kami</h2>
-            <div class="product-filter">
-                <input type="text" id="product-search" placeholder="Cari produk..." class="search-input">
-                <select id="stock-filter" class="filter-select">
-                    <option value="all">Semua Stok</option>
-                    <option value="in-stock">Tersedia</option>
-                    <option value="limited">Terbatas</option>
-                    <option value="out">Habis</option>
-                </select>
-            </div>
-            <div class="product-grid" id="product-container">
-                <!-- Product cards will be loaded dynamically from database -->
-                <div class="product-card">
-                    <div class="loader"></div>
-                    <p>Memuat data produk...</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    
-    <!-- Login Modal -->
-    <div id="login-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h2>Login Admin</h2>
-            <form id="login-form">
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
-                </div>
-                <button type="submit" class="btn">Login</button>
+      </div>
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <a href="#quotation-form" class="bg-primary hover:bg-blue-800 text-white px-4 py-2 rounded-lg font-medium text-center">
+          Ajukan Penawaran
+        </a>
+        <div class="flex items-center gap-2 justify-end">
+          @auth
+            <a href="{{ route('dashboard') }}" class="text-primary hover:text-blue-800 font-medium">Dashboard</a>
+            <form method="POST" action="{{ route('logout') }}">
+              @csrf
+              <button type="submit" class="px-3 py-2 text-sm font-medium text-white bg-primary hover:bg-blue-800 rounded-lg">
+                Logout
+              </button>
             </form>
+          @else
+            <a href="{{ route('login') }}" class="text-primary hover:text-blue-800 font-medium">Login</a>
+            @if (Route::has('register'))
+              <a href="{{ route('register') }}" class="px-3 py-2 text-sm font-medium text-white bg-primary hover:bg-blue-800 rounded-lg">Register</a>
+            @endif
+          @endauth
         </div>
+      </div>
     </div>
+  </header>
 
-    <footer id="contact">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-column">
-                    <h3>Tentang PT Big</h3>
-                    <p>Spesialis lemari plastik berkualitas dengan berbagai macam pilihan untuk kebutuhan rumah dan bisnis Anda.</p>
-                    <div class="social-links">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                    </div>
-                </div>
-                <div class="footer-column">
-                    <h3>Kontak Kami</h3>
-                    <p><i class="fas fa-map-marker-alt"></i> Jl. Industri Raya No. 123, Jakarta</p>
-                    <p><i class="fas fa-phone"></i> (021) 12345678</p>
-                    <p><i class="fas fa-envelope"></i> info@ptbig.co.id</p>
-                </div>
-                <div class="footer-column">
-                    <h3>Jam Operasional</h3>
-                    <p>Senin - Jumat: 08:00 - 17:00</p>
-                    <p>Sabtu: 09:00 - 14:00</p>
-                    <p>Minggu & Hari Libur: Tutup</p>
-                </div>
-            </div>
-            <div class="copyright">
-                <p>&copy; 2023 PT Big. Semua Hak Dilindungi.</p>
-            </div>
+  <!-- Hero -->
+  <div class="bg-gradient-to-r from-primary to-blue-700 text-white py-16">
+    <div class="max-w-7xl mx-auto px-4 text-center">
+      <h1 class="text-4xl md:text-5xl font-bold mb-4">Furniture Plastik Berkualitas untuk Mitra Bisnis</h1>
+      <p class="text-xl max-w-3xl mx-auto opacity-90">
+        Solusi furniture plastik tahan lama untuk toko, sekolah, kantor, dan UMKM sejak 2005.
+      </p>
+    </div>
+  </div>
+
+  <!-- Search & Filter -->
+  <div class="max-w-7xl mx-auto px-4 -mt-6 relative z-10">
+    <div class="bg-white rounded-xl shadow-lg p-6">
+      <div class="flex flex-col md:flex-row gap-4">
+        <div class="flex-1">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Cari Produk</label>
+          <div class="relative">
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Cari nama produk..."
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+            />
+            <i class="fas fa-search absolute right-3 top-2.5 text-gray-400"></i>
+          </div>
         </div>
-    </footer>
-    
-    <script>
-        // Simulasi data produk dari database
-        const productData = [
-            {
-                id: 1,
-                name: "Lemari Plastik 2 Pintu",
-                description: "Lemari plastik dengan 2 pintu dan 4 rak untuk menyimpan berbagai kebutuhan rumah tangga.",
-                price: "Rp 550.000",
-                image: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/2d63a2a8-0984-4b88-8843-283558c7dc32.png"
-            },
-            {
-                id: 2,
-                name: "Lemari Plastik 3 Pintu",
-                description: "Lemari plastik besar dengan 3 pintu dan 6 rak, sangat cocok untuk penyimpanan yang lebih banyak.",
-                price: "Rp 750.000",
-                stock: 8,
-                image: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/93d6ee34-a5b4-4ddf-83b9-886866f009d8.png"
-            },
-            {
-                id: 3,
-                name: "Lemari Plastik Dapur",
-                description: "Lemari plastik khusus dapur dengan desain compact dan tahan air.",
-                price: "Rp 350.000",
-                stock: 0,
-                image: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/81587e34-4b12-4df4-acfe-6aec4d821865.png"
-            },
-            {
-                id: 4,
-                name: "Lemari Plastik Arsip",
-                description: "Lemari plastik untuk menyimpan dokumen penting dengan sistem penarikan yang mudah.",
-                price: "Rp 450.000",
-                stock: 3,
-                image: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/0768b0a2-5a58-4f3c-828e-786f708160d6.png"
-            },
-            {
-                id: 5,
-                name: "Lemari Plastik Kamar Mandi",
-                description: "Lemari plastik tahan air khusus kamar mandi dengan berbagai kompartemen.",
-                price: "Rp 300.000",
-                stock: 20,
-                image: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/2410437f-854c-46d9-8606-5c0db0a38e5b.png"
-            },
-            {
-                id: 6,
-                name: "Lemari Plastik Serbaguna",
-                description: "Lemari plastik serbaguna dengan desain modular yang bisa disesuaikan kebutuhan.",
-                price: "Rp 650.000",
-                stock: 5,
-                image: "https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/0b51be5d-067a-437f-b355-bd58d2765c9d.png"
-            }
-        ];
-        
-        // Fungsi untuk mendapatkan status stok
-        function getStockStatus(stock) {
-            if (stock > 10) {
-                return { status: 'Tersedia', class: 'in-stock' };
-            } else if (stock > 0) {
-                return { status: 'Stok Terbatas', class: 'pre-order' };
-            } else {
-                return { status: 'Habis', class: 'out-stock' };
-            }
-        }
-        
-        // Fungsi untuk menampilkan produk
-        async function displayProducts(productsToShow = productData) {
-            // Get live stock data
-            const stockData = await fetchStockData();
-            const productContainer = document.getElementById('product-container');
-            productContainer.innerHTML = '';
-            
-            if (productsToShow.length === 0) {
-                productContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">Produk tidak ditemukan</p>';
-                return;
-            }
-            
-            // Simulasi delay loading dari database
-            setTimeout(() => {
-                productsToShow.forEach(product => {
-                    // Find matching stock for this product
-                    const productStock = stockData?.find(item => item.id === product.id)?.stock || 0;
-                    const stockInfo = getStockStatus(productStock);
-                    
-                    const productCard = document.createElement('div');
-                    productCard.className = 'product-card';
-                    productCard.innerHTML = `
-                        <img src="${product.image}" alt="${product.name}" class="product-image" />
-                        <div class="product-info">
-                            <h3 class="product-name">${product.name}</h3>
-                            <p class="product-price">${product.price}</p>
-                            <p>${product.description}</p>
-                            <p>
-                                <span class="stock-status ${stockInfo.class}" data-product-id="${product.id}">
-                                    ${stockInfo.status} (${productStock} unit)
-                                </span>
-                            </p>
-                        </div>
-                    `;
-                    
-                    productCard.addEventListener('click', () => showProductModal(product.id));
-                    productContainer.appendChild(productCard);
-                });
-            }, 1500); // Simulasikan loading data dari database
-        }
-        
-        // Filter products based on search and stock
-        function filterProducts() {
-            const searchTerm = document.getElementById('product-search').value.toLowerCase();
-            const stockFilter = document.getElementById('stock-filter').value;
-            
-            const filtered = productData.filter(product => {
-                const matchesSearch = product.name.toLowerCase().includes(searchTerm) || 
-                                     product.description.toLowerCase().includes(searchTerm);
-                
-                // Get stock status from API data
-                const productStock = stockData?.find(item => item.id === product.id)?.stock || 0;
-                let matchesStock = true;
-                if (stockFilter === 'in-stock') {
-                    matchesStock = productStock > 10;
-                } else if (stockFilter === 'limited') {
-                    matchesStock = productStock > 0 && productStock <= 10;
-                } else if (stockFilter === 'out') {
-                    matchesStock = productStock === 0;
-                }
-                
-                return matchesSearch && matchesStock;
-            });
-            
-            displayProducts(filtered);
-        }
+        <div class="md:w-64">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+          <select id="categoryFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary">
+            <option value="all">Semua Kategori</option>
+            @foreach ($categoryOptions as $category)
+              <option value="{{ $category['slug'] }}">{{ $category['name'] }}</option>
+            @endforeach
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        // Show product detail modal
-        function showProductModal(productId) {
-            const product = productData.find(p => p.id === productId);
-            if (!product) return;
-            
-            const modal = document.querySelector('.modal');
-            const details = document.getElementById('modal-product-details');
-            
-            const productStock = stockData?.find(item => item.id === product.id)?.stock || 0;
-            const stockInfo = getStockStatus(productStock);
-            
-            details.innerHTML = `
-                <div style="display: flex; gap: 2rem; margin-bottom: 2rem;">
-                    <img src="${product.image}" alt="${product.name}" style="width: 300px; height: auto; border-radius: 8px;">
-                    <div>
-                        <h2>${product.name}</h2>
-                        <p style="font-size: 1.5rem; color: var(--secondary); margin: 1rem 0;">${product.price}</p>
-                        <span class="stock-status ${stockInfo.class}" style="font-size: 1rem;">
-                            ${stockInfo.status} (${productStock} unit)
-                        </span>
-                    </div>
-                </div>
-                <div>
-                    <h3>Deskripsi Produk</h3>
-                    <p>${product.description}</p>
-                    <p>Untuk informasi lebih lanjut dan pemesanan, silakan hubungi kami melalui kontak yang tersedia.</p>
-                </div>
-            `;
-            
-            modal.style.display = 'flex';
-        }
+  <!-- Product Grid -->
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+  </main>
 
-        // Fungsi untuk mengambil data stok dari PHP API
-        async function fetchStockData() {
-            try {
-                const response = await fetch('/api/stocks', {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    credentials: 'same-origin'
-                });
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return await response.json();
-            } catch (error) {
-                console.error('Error fetching stock:', error);
-                return [];
-            }
-        }
-        
-        // Handle login form submission
-        function handleLogin(e) {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            
-            // Here you would typically send to your Laravel login endpoint
-            fetch('/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({email, password})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Login berhasil!');
-                    document.getElementById('login-modal').style.display = 'none';
-                    // Update UI for logged in state
-                } else {
-                    alert('Login gagal: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Terjadi kesalahan saat login');
-            });
-        }
+  <!-- Product Detail Modal -->
+  <div id="productModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex justify-between items-start">
+          <h2 id="modalTitle" class="text-2xl font-bold text-gray-900"></h2>
+          <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times text-2xl"></i>
+          </button>
+        </div>
+        <div class="mt-4 flex flex-col md:flex-row gap-6">
+          <img id="modalImage" src="" alt="Produk" class="w-full md:w-1/2 rounded-lg shadow object-cover">
+          <div class="md:w-1/2">
+            <p id="modalCategory" class="text-sm text-primary font-semibold mb-2"></p>
+            <p id="modalStock" class="text-lg mb-2"></p>
+            <p class="text-sm text-gray-600 mb-3">Minimal Order: <span id="modalMinOrder"></span> pcs</p>
+            <div id="modalStatus" class="mb-4 inline-block px-3 py-1 rounded-full text-sm font-medium"></div>
+            <p id="modalDescription" class="text-gray-600 leading-relaxed mb-4"></p>
+            <button id="requestQuotationBtn" class="w-full bg-accent hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg">
+              Ajukan Penawaran untuk Produk Ini
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        // Function to update stock display
-        function updateStockDisplay(productId, newStock) {
-            const stockElement = document.querySelector(`[data-product-id="${productId}"]`);
-            if (stockElement) {
-                const stockInfo = getStockStatus(newStock);
-                stockElement.className = `stock-status ${stockInfo.class}`;
-                stockElement.textContent = `${stockInfo.status} (${newStock} unit)`;
-            }
-        }
+  <!-- Quotation Form Section -->
+  <section id="quotation-form" class="max-w-4xl mx-auto px-4 py-16 bg-white rounded-xl shadow-lg mt-12 mb-16">
+    <h2 class="text-3xl font-bold text-center text-gray-900 mb-2">Ajukan Penawaran</h2>
+    <p class="text-gray-600 text-center mb-8">Isi form berikut untuk menjadi mitra grosir PT BIG.</p>
 
-        // Event listener untuk ketika dokumen selesai dimuat
-        document.addEventListener('DOMContentLoaded', function() {
-            // Login button click
-            document.getElementById('login-btn').addEventListener('click', function(e) {
-                e.preventDefault();
-                document.getElementById('login-modal').style.display = 'flex';
-            });
+    <form id="quotationForm" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap *</label>
+          <input type="text" name="name" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nama Toko *</label>
+          <input type="text" name="shop_name" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+          <input type="email" name="email" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">WhatsApp *</label>
+          <input type="text" name="whatsapp" required placeholder="081234567890" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+        </div>
+      </div>
 
-            // Login form submission
-            document.getElementById('login-form').addEventListener('submit', handleLogin);
-            
-            
-            // Close login modal when clicking X
-            document.querySelector('#login-modal .close-modal').addEventListener('click', () => {
-                document.getElementById('login-modal').style.display = 'none';
-            });
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Alamat Lengkap *</label>
+        <textarea name="address" required rows="3" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"></textarea>
+      </div>
 
-            // Close login modal when clicking outside
-            document.getElementById('login-modal').addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.style.display = 'none';
-                }
-            });
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Produk yang Diminati *</label>
+        <div id="productChecklist" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+      </div>
 
-            displayProducts();
-            
-            // Filter products
-            document.getElementById('product-search').addEventListener('input', filterProducts);
-            document.getElementById('stock-filter').addEventListener('change', filterProducts);
+      <button type="submit" class="w-full bg-primary hover:bg-blue-800 text-white font-bold py-3.5 rounded-lg text-lg">
+        Kirim Penawaran
+      </button>
+    </form>
+  </section>
 
-            // Initialize product modal
-            const modal = document.createElement('div');
-            modal.className = 'modal';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <span class="close-modal">&times;</span>
-                    <div id="modal-product-details"></div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            
-            // Contoh cara menghubungkan ke API nyata (jika sudah ada)
-            /* 
-            fetchProductsFromAPI().then(products => {
-                // Proses data dari API
-                displayProducts(products);
-            }).catch(error => {
-                console.error('Error fetching products:', error);
-            });
-            */
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white py-8">
+    <div class="max-w-7xl mx-auto px-4 text-center space-y-3">
+      <p class="text-sm text-gray-300">Jl. Industri Raya No. 123, Jakarta | (021) 12345678 | info@ptbig.co.id</p>
+      <p>&copy; {{ now()->year }} PT BIG - Produsen Furniture Plastik Terkemuka</p>
+    </div>
+  </footer>
+
+  <script>
+    const products = @json($productsData);
+    let lastClickedProductId = null;
+
+    const fallbackImageBase = 'https://images.unsplash.com/featured/?furniture';
+
+    function resolveImage(product) {
+      if (product.image) {
+        return product.image;
+      }
+      const seed = product.id ?? Math.floor(Math.random() * 1000);
+      return `${fallbackImageBase}&auto=format&fit=crop&w=600&q=80&sig=${seed}`;
+    }
+
+    function getAvailabilityMeta(product) {
+      const statusValue = (product.status || '').toString().trim();
+      const statusLower = statusValue.toLowerCase();
+
+      if (statusLower.includes('habis') || statusLower.includes('out')) {
+        return { text: statusValue || 'Stok habis', className: 'bg-red-100 text-red-600' };
+      }
+      if (statusLower.includes('terbatas') || statusLower.includes('limited')) {
+        return { text: statusValue || 'Stok terbatas', className: 'bg-warning/10 text-warning' };
+      }
+      if (statusLower.length) {
+        return { text: statusValue, className: 'bg-success/10 text-success' };
+      }
+
+      if (product.stock >= 100) {
+        return { text: 'Stok tersedia', className: 'bg-success/10 text-success' };
+      }
+      if (product.stock > 0) {
+        return { text: 'Stok terbatas', className: 'bg-warning/10 text-warning' };
+      }
+      return { text: 'Stok habis', className: 'bg-red-100 text-red-600' };
+    }
+
+    function renderProducts(filteredProducts) {
+      const grid = document.getElementById('productGrid');
+      if (!grid) return;
+
+      if (!filteredProducts.length) {
+        grid.innerHTML = `
+          <div class="col-span-full bg-white rounded-xl shadow p-6 text-center text-gray-600">
+            Belum ada produk yang cocok dengan pencarian Anda.
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = '';
+
+      filteredProducts.forEach(product => {
+        const availability = getAvailabilityMeta(product);
+        const card = document.createElement('div');
+        card.className = 'product-card bg-white rounded-xl shadow p-4 cursor-pointer flex flex-col';
+
+        card.innerHTML = `
+          <div class="aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden mb-3">
+            <img src="${resolveImage(product)}" alt="${product.name}" class="w-full h-full object-cover">
+          </div>
+          <span class="text-xs font-semibold text-primary">${product.categoryName}</span>
+          <h3 class="font-bold mt-1 line-clamp-2 min-h-[48px]">${product.name}</h3>
+          <p class="text-xs text-gray-500 mt-1">Minimal Order: ${product.minOrder} pcs</p>
+          <div class="mt-2 flex justify-between items-center">
+            <span class="text-sm text-gray-600">Stok: ${product.stock}</span>
+            <span class="px-2 py-1 text-xs font-medium rounded-full ${availability.className}">
+              ${availability.text}
+            </span>
+          </div>
+        `;
+
+        card.addEventListener('click', () => openProductModal(product));
+        grid.appendChild(card);
+      });
+    }
+
+    function openProductModal(product) {
+      lastClickedProductId = product.id;
+
+      const availability = getAvailabilityMeta(product);
+      const modal = document.getElementById('productModal');
+      if (!modal) return;
+
+      document.getElementById('modalTitle').textContent = product.name;
+      document.getElementById('modalCategory').textContent = product.categoryName;
+      document.getElementById('modalStock').textContent = `Stok: ${product.stock}`;
+      document.getElementById('modalMinOrder').textContent = product.minOrder;
+      document.getElementById('modalImage').src = resolveImage(product);
+      document.getElementById('modalDescription').textContent = product.description;
+
+      const statusElement = document.getElementById('modalStatus');
+      statusElement.textContent = availability.text;
+      statusElement.className = `mb-4 inline-block px-3 py-1 rounded-full text-sm font-medium ${availability.className}`;
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function renderProductChecklist() {
+      const container = document.getElementById('productChecklist');
+      if (!container) return;
+
+      if (!products.length) {
+        container.innerHTML = '<p class="text-sm text-gray-500">Belum ada data produk di sistem.</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      products.forEach(product => {
+        const wrapper = document.createElement('label');
+        wrapper.className = 'flex items-start gap-3 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 hover:border-primary hover:bg-white transition';
+        wrapper.setAttribute('for', `prod-${product.id}`);
+        wrapper.innerHTML = `
+          <input type="checkbox" id="prod-${product.id}" name="products[]" value="${product.id}" class="mt-1 h-5 w-5 text-primary rounded border-gray-300 focus:ring-primary">
+          <div>
+            <p class="text-sm font-medium text-gray-700">${product.name}</p>
+            <p class="text-xs text-gray-500">Stok: ${product.stock} | Minimal order ${product.minOrder} pcs</p>
+          </div>
+        `;
+        container.appendChild(wrapper);
+      });
+    }
+
+    function getFilteredProducts() {
+      const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase();
+      const category = document.getElementById('categoryFilter')?.value || 'all';
+
+      return products.filter(product => {
+        const matchesSearch = product.name.toLowerCase().includes(searchTerm);
+        const matchesCategory = category === 'all' || product.category === category;
+        return matchesSearch && matchesCategory;
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('searchInput');
+      const categoryFilter = document.getElementById('categoryFilter');
+      const modal = document.getElementById('productModal');
+      const closeModal = document.getElementById('closeModal');
+      const requestQuotationBtn = document.getElementById('requestQuotationBtn');
+      const quotationForm = document.getElementById('quotationForm');
+
+      renderProducts(products);
+      renderProductChecklist();
+
+      if (searchInput) {
+        searchInput.addEventListener('input', () => renderProducts(getFilteredProducts()));
+      }
+
+      if (categoryFilter) {
+        categoryFilter.addEventListener('change', () => renderProducts(getFilteredProducts()));
+      }
+
+      if (closeModal) {
+        closeModal.addEventListener('click', () => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
         });
-    </script>
+      }
+
+      if (modal) {
+        modal.addEventListener('click', event => {
+          if (event.target === modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+          }
+        });
+      }
+
+      if (requestQuotationBtn) {
+        requestQuotationBtn.addEventListener('click', () => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+
+          if (lastClickedProductId) {
+            const checkbox = document.querySelector(`input[value="${lastClickedProductId}"]`);
+            if (checkbox) {
+              checkbox.checked = true;
+            }
+          }
+
+          document.getElementById('quotation-form')?.scrollIntoView({ behavior: 'smooth' });
+        });
+      }
+
+      if (quotationForm) {
+        quotationForm.addEventListener('submit', event => {
+          event.preventDefault();
+          const checkedProducts = quotationForm.querySelectorAll('input[name="products[]"]:checked');
+
+          if (!checkedProducts.length) {
+            alert('Silakan pilih minimal 1 produk.');
+            return;
+          }
+
+          alert('Penawaran berhasil dikirim! Tim PT BIG akan segera menghubungi Anda.');
+          quotationForm.reset();
+        });
+      }
+    });
+  </script>
+
 </body>
 </html>
