@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Styling untuk body dan konten */
+body {
+    background-color: #121212; /* Warna gelap */
+    color: #e0e0e0; /* Warna teks terang agar kontras dengan latar belakang */
+    font-family: 'Inter', sans-serif; /* Gunakan font yang modern dan mudah dibaca */
+}
+
+/* Styling untuk container utama */
+.container {
+    background-color: #1a1a1a; /* Warna latar belakang untuk kontainer */
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Styling untuk heading */
+h1 {
+    color: #f0f0f0; /* Teks judul dengan warna terang */
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+/* Styling untuk tabel */
+.table {
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    background-color: #333; /* Warna latar belakang tabel */
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Styling untuk header tabel */
+th, td {
+    padding: 12px 16px;
+    text-align: center; /* Centering content in table */
+    color: #fff; /* Warna teks tabel */
+}
+
+th {
+    background-color: #555; /* Warna latar belakang header tabel */
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* Styling untuk tombol */
+.btn-success, .btn-warning, .btn-danger {
+    border-radius: 5px;
+    padding: 8px 20px;
+    text-transform: uppercase;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+/* Warna untuk tombol success */
+.btn-success {
+    background-color: #28a745; /* Hijau untuk tombol Add Product */
+    color: white;
+}
+
+/* Warna untuk tombol warning */
+.btn-warning {
+    background-color: #ffc107; /* Kuning untuk tombol Edit */
+    color: black;
+}
+
+/* Warna untuk tombol danger */
+.btn-danger {
+    background-color: #dc3545; /* Merah untuk tombol Delete */
+    color: white;
+}
+
+/* Hover effect pada tombol */
+.btn-success:hover {
+    background-color: #218838; /* Hijau lebih gelap */
+}
+
+.btn-warning:hover {
+    background-color: #e0a800; /* Kuning lebih gelap */
+}
+
+.btn-danger:hover {
+    background-color: #c82333; /* Merah lebih gelap */
+}
+
+/* Styling untuk form pencarian dan tombol scan */
+.input-group {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 20px;
+}
+
+.input-group input {
+    border-radius: 30px;
+    padding: 12px 20px;
+}
+
+.input-group button {
+    border-radius: 30px;
+    padding: 12px 20px;
+}
+
+/* Styling untuk tombol Start dan Stop Barcode Scan */
+#start-scan, #stop-scan {
+    padding: 10px 30px;
+    font-size: 16px;
+    border-radius: 25px;
+}
+
+/* Styling untuk video scanner */
+#scanner-container video {
+    border-radius: 15px;
+    border: 2px solid #444;
+}
+
+/* Responsivitas untuk perangkat kecil */
+@media (max-width: 768px) {
+    .table {
+        font-size: 14px; /* Menurunkan ukuran font pada perangkat kecil */
+    }
+
+    .input-group {
+        width: 90%;
+    }
+
+    .btn-sm {
+        font-size: 12px; /* Menurunkan ukuran tombol di perangkat kecil */
+        padding: 6px 12px;
+    }
+
+    .btn-lg {
+        font-size: 16px; /* Ukuran tombol yang lebih besar di perangkat kecil */
+        padding: 12px 24px;
+    }
+}
+
